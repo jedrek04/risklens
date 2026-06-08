@@ -1,0 +1,7 @@
+# python version 3.12
+
+yfinance
+pandas
+google-cloud-bigquery
+python-dotenv
+pyarrow
