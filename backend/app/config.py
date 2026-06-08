@@ -3,6 +3,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-PROJECT_ID = os.getenv("PROJECT_ID", "")
+PROJECT_ID = os.getenv("PROJECT_ID", "risklens-498721")
 DATASET = os.getenv("DATASET", "market_data")
 PRICE_TABLE = os.getenv("PRICE_TABLE", "market_prices_raw")
