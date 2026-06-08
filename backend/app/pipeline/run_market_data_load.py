@@ -37,6 +37,28 @@ def load_to_staging(df):
     )
     job.result()
 
+def ensure_target_table():
+
+    schema = [
+        bigquery.SchemaField("date", "DATE"),
+        bigquery.SchemaField("ticker", "STRING"),
+        bigquery.SchemaField("open", "FLOAT"),
+        bigquery.SchemaField("high", "FLOAT"),
+        bigquery.SchemaField("low", "FLOAT"),
+        bigquery.SchemaField("close", "FLOAT"),
+        bigquery.SchemaField("volume", "FLOAT"),
+        bigquery.SchemaField("daily_return", "FLOAT"),
+        bigquery.SchemaField("name", "STRING"),
+        bigquery.SchemaField("category", "STRING"),
+    ]
+
+    client.create_table(
+        bigquery.Table(
+            TARGET_TABLE,
+            schema=schema
+        ),
+        exists_ok=True
+    )
 
 def merge_staging_to_target():
     query = f"""
@@ -102,6 +124,8 @@ def run(days: int):
 
 
     recreate_staging()
+
+    ensure_target_table()
 
     print("Loading staging...")
     load_to_staging(df)

@@ -2,6 +2,7 @@ from .tickers import get_all_tickers
 
 import yfinance as yf
 import pandas as pd
+import numpy as np
 from datetime import datetime, timezone
 
 
@@ -42,6 +43,8 @@ def fetch_price_history(
 
     df["ticker"] = ticker
     df["daily_return"] = df["close"].pct_change()
+    df["daily_return"] = np.log(
+    df["close"] / df["close"].shift(1))
 
     df.index.name = "date"
     df = df.reset_index()
