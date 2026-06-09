@@ -6,3 +6,6 @@ google-cloud-bigquery
 python-dotenv
 pyarrow
 db-dtypes
+arch
+fastapi
+uvicorn
