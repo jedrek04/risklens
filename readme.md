@@ -7,10 +7,11 @@ Project `risklens-498721`, region `europe-west1`. Run everything from the repo r
 
 ## Layout
 
-- `backend/app/main.py` – FastAPI app (`/health`, `/risk/portfolio`, `/risk/anomalies`, `/risk/sentiment`); routes live in `routers/`, models in `services/`
+- `backend/app/main.py` – FastAPI app (`/health`, `/risk/portfolio`, `/risk/anomalies`, `/risk/sentiment`, `/risk/report`); routes live in `routers/`, models in `services/`
 - `backend/app/services/market_data/` – ticker universe (`tickers.py`) and yfinance fetcher
 - `backend/app/services/risk/` – price loading, return alignment, GARCH volatility, Monte Carlo VaR/CVaR, Isolation Forest anomalies
 - `backend/app/services/sentiment/` – GNews client, relevance filters, FinBERT scoring, BigQuery cache (`news_headlines`, `news_fetches`)
+- `backend/app/services/report/` – fact sheet, Gemini (Vertex AI) writer, number verification, request validation. `/risk/report` takes the portfolio plus the results the page already has (risk, anomalies, sentiment)
 - `backend/app/pipeline/` – Cloud Run Job `market-data-load`: fetch -> BigQuery staging -> MERGE into
   `market_data.market_prices_raw`. Runs nightly at 01:00 (Cloud Scheduler, `--days 730`)
 - `tests/` – pytest, no GCP needed

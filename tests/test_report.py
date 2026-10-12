@@ -10,8 +10,9 @@ from backend.app.routers.report import get_report_service
 from backend.app.schemas import AnomalyRequest, PortfolioRequest
 from backend.app.services.report import verify
 from backend.app.services.report.facts import build_facts
+from backend.app.services.report.payload import ReportRequest
 from backend.app.services.report.prompt import SYSTEM_PROMPT, ReportDraft, build_prompt
-from backend.app.services.report.service import DISCLAIMER, ReportError, ReportService
+from backend.app.services.report.service import DISCLAIMER, ReportError, ReportService, facts_from
 from backend.app.services.report.writer import GeminiWriter, WriterError
 from backend.app.services.risk import anomalies, portfolio
 from backend.app.services.sentiment.service import SentimentService
@@ -47,9 +48,18 @@ def outputs():
     return risk, anomaly, sentiment
 
 
+PORTFOLIO = [{"ticker": "AAPL", "weight": 0.6}, {"ticker": "GC=F", "weight": 0.4}]
+
+
+def make_request(outputs, **changes) -> ReportRequest:
+    data = {"portfolio": PORTFOLIO, "risk": outputs[0], "anomalies": outputs[1], "sentiment": outputs[2]}
+    data.update(changes)
+    return ReportRequest(**data)
+
+
 @pytest.fixture
 def facts(outputs):
-    return build_facts(*outputs[:3], reasons={})
+    return facts_from(make_request(outputs))
 
 
 def good_draft(facts) -> ReportDraft:
@@ -78,15 +88,6 @@ class FakeWriter:
         if isinstance(draft, Exception):
             raise draft
         return draft
-
-
-def service(outputs, writer, risk=None, anomaly=None, sentiment=None):
-    return ReportService(
-        risk or (lambda r: outputs[0]),
-        anomaly or (lambda r: outputs[1]),
-        sentiment or (lambda t: outputs[2]),
-        writer,
-    )
 
 
 def with_text(draft, **changes):
@@ -144,7 +145,7 @@ def test_prompt_contains_the_safety_rules_and_feedback(facts):
 def test_report_generated_on_first_attempt(outputs, facts):
     writer = FakeWriter([good_draft(facts)])
 
-    out = service(outputs, writer).generate(REQUEST)
+    out = ReportService(writer).generate(make_request(outputs))
 
     assert out["meta"]["attempts"] == 1 and out["meta"]["rejected_draft_issues"] == []
     assert [s["heading"] for s in out["report"]["sections"]] == [
@@ -155,11 +156,19 @@ def test_report_generated_on_first_attempt(outputs, facts):
     assert out["facts"]["risk"]["var"] in out["markdown"]
 
 
+def test_report_uses_the_numbers_the_page_sent(outputs):
+    risk = {**outputs[0], "portfolio": {**outputs[0]["portfolio"], "var": 0.1234}}
+
+    facts = facts_from(make_request(outputs, risk=risk))
+
+    assert facts["risk"]["var"] == "12.3%"
+
+
 def test_bad_number_triggers_one_retry_with_feedback(outputs, facts):
     bad = with_text(good_draft(facts), summary="Losses of 12.34% are likely.")
     writer = FakeWriter([bad, good_draft(facts)])
 
-    out = service(outputs, writer).generate(REQUEST)
+    out = ReportService(writer).generate(make_request(outputs))
 
     assert out["meta"]["attempts"] == 2
     assert writer.calls[0] is None and "12.34" in writer.calls[1][0]
@@ -171,37 +180,44 @@ def test_two_bad_drafts_is_an_error_not_a_template(outputs, facts):
     writer = FakeWriter([bad, bad, good_draft(facts)])
 
     with pytest.raises(ReportError, match="number check"):
-        service(outputs, writer).generate(REQUEST)
+        ReportService(writer).generate(make_request(outputs))
 
     assert len(writer.calls) == 2
 
 
 def test_writer_failure_is_an_error(outputs):
     with pytest.raises(ReportError, match="AI writer failed"):
-        service(outputs, FakeWriter([RuntimeError("vertex down")])).generate(REQUEST)
+        ReportService(FakeWriter([RuntimeError("vertex down")])).generate(make_request(outputs))
 
 
-def test_missing_anomalies_and_sentiment_do_not_block_the_report(outputs, facts):
-    def broken(_):
-        raise RuntimeError("boom")
-
-    def short(_):
-        raise ValueError("Not enough price history")
-
+def test_missing_anomalies_and_sentiment_are_marked_unavailable(outputs, facts):
     writer = FakeWriter([good_draft(facts)])
 
-    out = service(outputs, writer, anomaly=short, sentiment=broken).generate(REQUEST)
+    out = ReportService(writer).generate(make_request(outputs, anomalies=None, sentiment=None))
 
-    assert out["facts"]["anomalies"] == {"available": False, "reason": "Not enough price history"}
-    assert out["facts"]["sentiment"]["reason"] == "temporarily unavailable"
+    assert out["facts"]["anomalies"] == {"available": False, "reason": "this analysis was not provided"}
+    assert out["facts"]["sentiment"]["available"] is False
 
 
-def test_risk_failure_propagates(outputs, facts):
-    def no_data(_):
-        raise ValueError("No data for ticker(s): ZZZ")
+def test_results_must_match_the_selected_portfolio(outputs):
+    other_tickers = [{"ticker": "AAPL", "weight": 1.0}]
+    other_weights = [{"ticker": "AAPL", "weight": 0.5}, {"ticker": "GC=F", "weight": 0.5}]
 
-    with pytest.raises(ValueError):
-        service(outputs, FakeWriter([good_draft(facts)]), risk=no_data).generate(REQUEST)
+    for portfolio_ in (other_tickers, other_weights):
+        with pytest.raises(ValueError, match="do not match"):
+            facts_from(make_request(outputs, portfolio=portfolio_))
+
+    wrong_sentiment = {**outputs[2], "assets": outputs[2]["assets"][:1]}
+    with pytest.raises(ValueError, match="sentiment"):
+        facts_from(make_request(outputs, sentiment=wrong_sentiment))
+
+
+def test_engine_output_is_accepted_unchanged_but_malformed_payloads_are_not(outputs):
+    make_request(outputs)
+
+    broken = {**outputs[0], "portfolio": {"var": 0.05}}
+    with pytest.raises(Exception):
+        make_request(outputs, risk=broken)
 
 
 class FakeModels:
@@ -238,7 +254,9 @@ def test_writer_rejects_unusable_answers(facts):
 
 class TestApi:
     client = TestClient(app)
-    body = {"portfolio": [{"ticker": "AAPL", "weight": 1.0}]}
+    @pytest.fixture
+    def body(self, outputs):
+        return {"portfolio": PORTFOLIO, "risk": outputs[0], "anomalies": outputs[1], "sentiment": outputs[2]}
 
     @pytest.fixture(autouse=True)
     def clean(self):
@@ -249,31 +267,53 @@ class TestApi:
         stub = SimpleNamespace(generate=generate)
         app.dependency_overrides[get_report_service] = lambda: stub
 
-    def test_ok(self):
+    def test_ok(self, body):
         self.override(lambda r: {"markdown": "# hi"})
 
-        assert self.client.post("/risk/report", json=self.body).json() == {"markdown": "# hi"}
+        assert self.client.post("/risk/report", json=body).json() == {"markdown": "# hi"}
 
-    def test_report_error_is_502_without_internals(self):
+    def test_report_error_is_502_without_internals(self, body):
         def fail(_):
             raise ReportError("secret internal detail")
 
         self.override(fail)
-        r = self.client.post("/risk/report", json=self.body)
+        r = self.client.post("/risk/report", json=body)
 
         assert r.status_code == 502 and "secret" not in r.text
 
-    def test_data_error_is_400(self):
+    def test_data_error_is_400(self, body):
         def fail(_):
             raise ValueError("No data for ticker(s): ZZZ")
 
         self.override(fail)
 
-        assert self.client.post("/risk/report", json=self.body).status_code == 400
+        assert self.client.post("/risk/report", json=body).status_code == 400
 
-    def test_bad_weights_are_422(self):
+    def test_bad_weights_are_422(self, body):
         self.override(lambda r: {})
 
-        r = self.client.post("/risk/report", json={"portfolio": [{"ticker": "AAPL", "weight": 0.5}]})
+        r = self.client.post("/risk/report", json={**body, "portfolio": [{"ticker": "AAPL", "weight": 0.5}]})
 
         assert r.status_code == 422
+
+    def test_weights_are_not_normalised(self, body):
+        self.override(lambda r: {})
+
+        r = self.client.post(
+            "/risk/report",
+            json={**body, "portfolio": [{"ticker": "AAPL", "weight": 0.3333}, {"ticker": "GC=F", "weight": 0.3333}]},
+        )
+
+        assert r.status_code == 422
+
+    def test_missing_risk_results_are_422(self, body):
+        self.override(lambda r: {})
+        del body["risk"]
+
+        assert self.client.post("/risk/report", json=body).status_code == 422
+
+    def test_malformed_results_are_422(self, body):
+        self.override(lambda r: {})
+        body["risk"]["portfolio"] = {"var": "lots"}
+
+        assert self.client.post("/risk/report", json=body).status_code == 422

@@ -1,16 +1,14 @@
 import logging
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from backend.app.config import GEMINI_MODEL
-from backend.app.schemas import AnomalyRequest, PortfolioRequest
 from backend.app.services.report import verify
 from backend.app.services.report.facts import build_facts
+from backend.app.services.report.payload import ReportRequest
 from backend.app.services.report.prompt import ReportDraft
 
 logger = logging.getLogger(__name__)
 
-ANOMALY_DAYS = 365
 MAX_ATTEMPTS = 2
 
 DISCLAIMER = (
@@ -23,6 +21,18 @@ DISCLAIMER = (
 
 class ReportError(Exception):
     pass
+
+
+def check_matches_portfolio(request: ReportRequest) -> None:
+    expected = {a.ticker: a.weight for a in request.portfolio}
+    got = {a.ticker: a.weight for a in request.risk.assets}
+
+    if expected.keys() != got.keys() or any(abs(expected[t] - got[t]) > 1e-6 for t in expected):
+        raise ValueError("The risk results do not match the selected portfolio, please calculate again")
+
+    for name, result in (("anomalies", request.anomalies), ("sentiment", request.sentiment)):
+        if result is not None and {a.ticker if name == "sentiment" else a.name for a in result.assets} != expected.keys():
+            raise ValueError(f"The {name} results do not match the selected portfolio, please calculate again")
 
 
 def render_markdown(draft: ReportDraft) -> str:
@@ -46,31 +56,21 @@ def sections(draft: ReportDraft) -> list[dict]:
     ]
 
 
+def facts_from(request: ReportRequest) -> dict:
+    check_matches_portfolio(request)
+    not_provided = "this analysis was not provided"
+
+    return build_facts(
+        request.risk.model_dump(),
+        request.anomalies.model_dump() if request.anomalies else None,
+        request.sentiment.model_dump() if request.sentiment else None,
+        reasons={"anomalies": not_provided, "sentiment": not_provided},
+    )
+
+
 class ReportService:
-    def __init__(self, risk_fn, anomaly_fn, sentiment_fn, writer):
-        self.risk_fn = risk_fn
-        self.anomaly_fn = anomaly_fn
-        self.sentiment_fn = sentiment_fn
+    def __init__(self, writer):
         self.writer = writer
-
-    def _gather(self, request: PortfolioRequest):
-        tickers = [a.ticker for a in request.portfolio]
-        anomaly_request = AnomalyRequest(portfolio=request.portfolio, days=ANOMALY_DAYS)
-        reasons = {}
-
-        def optional(name, fn, *args):
-            try:
-                return fn(*args)
-            except Exception as e:
-                logger.warning("report: %s unavailable: %s", name, e)
-                reasons[name] = str(e) if isinstance(e, ValueError) else "temporarily unavailable"
-                return None
-
-        with ThreadPoolExecutor(max_workers=3) as pool:
-            risk = pool.submit(self.risk_fn, request)
-            anomalies = pool.submit(optional, "anomalies", self.anomaly_fn, anomaly_request)
-            sentiment = pool.submit(optional, "sentiment", self.sentiment_fn, tickers)
-            return risk.result(), anomalies.result(), sentiment.result(), reasons
 
     def _write(self, facts: dict):
         problems, issues = None, []
@@ -91,9 +91,8 @@ class ReportService:
 
         raise ReportError("the AI draft did not pass the number check")
 
-    def generate(self, request: PortfolioRequest) -> dict:
-        risk, anomalies, sentiment, reasons = self._gather(request)
-        facts = build_facts(risk, anomalies, sentiment, reasons)
+    def generate(self, request: ReportRequest) -> dict:
+        facts = facts_from(request)
         draft, attempts, issues = self._write(facts)
 
         return {

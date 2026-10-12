@@ -75,7 +75,7 @@ def anomaly_facts(anomalies: dict) -> dict:
             "latest_date": summary["latest_date"],
             "latest_day_is_unusual": summary["latest_is_anomaly"],
             "most_recent_unusual_days": [
-                {"date": a["date"], "daily_return": pct(a["return"], 2)} for a in recent
+                {"date": a["date"], "daily_return": pct(a["daily_return"], 2)} for a in recent
             ],
         },
         "assets": [
