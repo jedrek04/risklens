@@ -1,4 +1,4 @@
-FROM python:3.12
+FROM python:3.12-slim
 
 WORKDIR /app
 
@@ -9,4 +9,4 @@ COPY backend backend
 
 ENV PYTHONPATH=/app
 
-CMD ["uvicorn", "backend.app.services.risk.garch.app:app", "--host", "0.0.0.0", "--port", "8080"]
+ENTRYPOINT ["python", "-m", "backend.app.pipeline.entrypoint"]

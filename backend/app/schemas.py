@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field, model_validator
 from typing import List
+
+from pydantic import BaseModel, Field, model_validator
 
 
 class PortfolioAsset(BaseModel):
@@ -8,9 +9,9 @@ class PortfolioAsset(BaseModel):
 
 
 class PortfolioRequest(BaseModel):
-    portfolio: List[PortfolioAsset]
-    days: int = 365
-    horizon: int = 10
+    portfolio: List[PortfolioAsset] = Field(min_length=1)
+    days: int = Field(default=365, ge=150, le=4000)
+    horizon: int = Field(default=10, ge=1, le=90)
 
     @model_validator(mode="after")
     def validate_weights(self):

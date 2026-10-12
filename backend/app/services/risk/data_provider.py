@@ -1,15 +1,21 @@
-from google.cloud import bigquery
+from functools import cache
+
 import pandas as pd
-from backend.app.config import PROJECT_ID
+from google.cloud import bigquery
 
-client = bigquery.Client(project=PROJECT_ID)
+from backend.app.config import PROJECT_ID, DATASET, PRICE_TABLE
 
-TABLE = f"{PROJECT_ID}.market_data.market_prices_raw"
+TABLE = f"{PROJECT_ID}.{DATASET}.{PRICE_TABLE}"
+
+
+@cache
+def get_client() -> bigquery.Client:
+    return bigquery.Client(project=PROJECT_ID)
 
 
 def load_price_data(ticker: str, days: int) -> pd.DataFrame:
     query = f"""
-    SELECT *
+    SELECT date, close
     FROM `{TABLE}`
     WHERE ticker = @ticker
       AND date >= DATE_SUB(CURRENT_DATE(), INTERVAL @days DAY)
@@ -23,7 +29,7 @@ def load_price_data(ticker: str, days: int) -> pd.DataFrame:
         ]
     )
 
-    df = client.query(query, job_config=job_config).to_dataframe()
+    df = get_client().query(query, job_config=job_config).to_dataframe()
 
     if df.empty:
         raise ValueError(f"No data for ticker={ticker}")

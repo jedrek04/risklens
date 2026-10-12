@@ -1,17 +1,12 @@
+import numpy as np
+import pandas as pd
+import yfinance as yf
+
 from .tickers import get_all_tickers
 
-import yfinance as yf
-import pandas as pd
-import numpy as np
-from datetime import datetime, timezone
 
-
-def fetch_price_history(
-    ticker: str,
-    days: int
-) -> pd.DataFrame:
-
-    end = datetime.today()
+def fetch_price_history(ticker: str, days: int) -> pd.DataFrame:
+    end = pd.Timestamp.today()
     start = end - pd.Timedelta(days=days)
 
     df = yf.download(
@@ -19,93 +14,41 @@ def fetch_price_history(
         start=start,
         end=end,
         auto_adjust=True,
-        progress=False
+        progress=False,
     )
 
     if df is None or df.empty:
         raise ValueError("empty data")
 
-    df = df[[
-        "Open",
-        "High",
-        "Low",
-        "Close",
-        "Volume"
-    ]]
+    df = df[["Open", "High", "Low", "Close", "Volume"]]
+    df.columns = ["open", "high", "low", "close", "volume"]
 
-    df.columns = [
-        "open",
-        "high",
-        "low",
-        "close",
-        "volume"
-    ]
+    df = df.dropna(subset=["close"])
 
     df["ticker"] = ticker
-    df["daily_return"] = df["close"].pct_change()
-    df["daily_return"] = np.log(
-    df["close"] / df["close"].shift(1))
+    df["daily_return"] = np.log(df["close"] / df["close"].shift(1))
 
     df.index.name = "date"
     df = df.reset_index()
-
-    # IMPORTANT: BigQuery DATE
     df["date"] = pd.to_datetime(df["date"]).dt.date
-
-    numeric_cols = [
-        "open",
-        "high",
-        "low",
-        "close",
-        "volume",
-        "daily_return"
-    ]
-
-    for col in numeric_cols:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
 
     return df
 
 
 def fetch_all_prices(days: int):
-
-    tickers = get_all_tickers()
-
     all_data = []
     failed = []
 
-    for t in tickers:
-
-        symbol = t["symbol"]
-        name = t["name"]
-        category = t["category"]
-
+    for t in get_all_tickers():
         try:
-            df = fetch_price_history(
-                ticker=symbol,
-                days=days
-            )
-
-            df["name"] = name
-            df["category"] = category
-
+            df = fetch_price_history(ticker=t["symbol"], days=days)
+            df["name"] = t["name"]
+            df["category"] = t["category"]
             all_data.append(df)
-
-            print(f"OK   -> {symbol}")
-
+            print(f"OK   -> {t['symbol']}")
         except Exception as e:
-            print(f"FAIL -> {symbol}")
+            print(f"FAIL -> {t['symbol']}: {e}")
+            failed.append({**t, "error": str(e)})
 
-            failed.append({
-                "symbol": symbol,
-                "name": name,
-                "category": category,
-                "error": str(e)
-            })
-
-    result_df = (
-        pd.concat(all_data, ignore_index=True)
-        if all_data else pd.DataFrame()
-    )
-
-    return result_df, failed
+    result = pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
+    return result, failed
