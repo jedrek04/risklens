@@ -1,0 +1,9 @@
+# python version 3.12
+
+yfinance==1.4.1
+pandas==3.0.3
+numpy==2.4.6
+google-cloud-bigquery==3.41.0
+python-dotenv==1.2.2
+pyarrow==24.0.0
+db-dtypes==1.7.0

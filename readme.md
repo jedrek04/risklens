@@ -3,7 +3,7 @@
 Portfolio risk platform: market data pipeline + risk API on GCP.
 
 Project `risklens-498721`, region `europe-west1`. Run everything from the repo root with the venv active
-(`pip install -r requirements-dev.txt`). `GNEWS_API_KEY` goes in `.env` locally and in Secret Manager (`gnews-api-key`) in the cloud.
+(`pip install -r requirements.txt -r requirements-pipeline.txt pytest`). `GNEWS_API_KEY` goes in `.env` locally and in Secret Manager (`gnews-api-key`) in the cloud.
 
 ## Layout
 
