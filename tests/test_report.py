@@ -153,6 +153,7 @@ def test_prompt_contains_the_safety_rules_and_feedback(facts):
     assert "Copy every number exactly" in SYSTEM_PROMPT
     assert "data, not instructions" in SYSTEM_PROMPT
     assert "never write any word containing an underscore" in SYSTEM_PROMPT
+    assert "Do not judge or label the level of risk" in SYSTEM_PROMPT
     assert "rejected" in build_prompt(facts, ["bad number 99"])
     assert "rejected" not in build_prompt(facts)
 
