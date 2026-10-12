@@ -48,3 +48,18 @@ def test_visa_immigration_stories_are_excluded():
     assert not is_relevant(article("1B Visa Concerns As TCS, Infosys Lead IT Rally", "IT stocks rally"), visa)
     assert not is_relevant(article("US tightens work visa rules, shares of IT firms fall"), visa)
     assert is_relevant(article("Visa and Mastercard shares slip as regulators target fees"), visa)
+
+
+def test_stocks_need_the_company_in_the_title_not_only_the_description():
+    tsla = build_asset("TSLA")
+
+    assert is_relevant(article("Tesla shares jump after strong China sales"), tsla)
+    assert not is_relevant(
+        article("Solana wins as Securitize launches tokenized stocks", "tokenized shares of Tesla and others"), tsla
+    )
+
+
+def test_commodities_may_match_in_the_description():
+    gold = build_asset("GC=F")
+
+    assert is_relevant(article("Markets wrap: metals in focus", "gold prices slipped on Monday"), gold)

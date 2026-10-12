@@ -26,7 +26,8 @@ def is_relevant(article: dict, asset: NewsAsset) -> bool:
     if asset.exclude and asset.exclude.search(text):
         return False
 
-    if not _mentions(text, asset.terms, asset.case_sensitive):
+    where = article["title"] if asset.title_only else text
+    if not _mentions(where, asset.terms, asset.case_sensitive):
         return False
 
     return not asset.needs_finance or bool(FINANCE_TERMS.search(text))

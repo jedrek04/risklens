@@ -72,6 +72,7 @@ class NewsAsset:
     case_sensitive: bool
     needs_finance: bool
     exclude: re.Pattern | None = None
+    title_only: bool = False
 
 
 def clean_name(name: str) -> str:
@@ -87,6 +88,8 @@ def clean_name(name: str) -> str:
 def aliases(name: str) -> tuple[str, ...]:
     words = name.split()
     out = [name]
+    if name.isupper() and len(name) > 3:
+        out.append(name.capitalize())
     if len(words) > 1:
         out.append("".join(words))
         if len(words[0]) >= 4 and words[0].lower() not in GENERIC_FIRST_WORDS:
@@ -128,4 +131,5 @@ def build_asset(ticker: str) -> NewsAsset:
     return NewsAsset(
         ticker, name, category, f"({quoted}) AND (stock OR stocks OR shares OR earnings)", terms, True, True,
         EXCLUDES.get(ticker),
+        True,
     )

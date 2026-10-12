@@ -52,3 +52,13 @@ def test_company_name_variants_are_searched_and_matched():
 def test_generic_first_words_are_not_used_as_aliases():
     assert "Bank" not in build_asset("BAC").terms
     assert "Bank of America" in build_asset("BAC").terms
+
+
+def test_all_caps_company_names_also_match_normal_capitalisation():
+    from backend.app.services.sentiment.filters import is_relevant
+    from tests.helpers import article
+
+    nvda = build_asset("NVDA")
+
+    assert "Nvidia" in nvda.terms
+    assert is_relevant(article("Nvidia shares fall after OpenAI revenue disclosure"), nvda)
