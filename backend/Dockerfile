@@ -6,10 +6,10 @@ ENV PYTHONPATH=/app \
     HF_HOME=/app/.hf \
     PIP_NO_CACHE_DIR=1
 
-COPY requirements.txt requirements-sentiment.txt ./
+COPY requirements.txt requirements-api.txt ./
 
-RUN pip install $(grep '^torch==' requirements-sentiment.txt) --index-url https://download.pytorch.org/whl/cpu
-RUN pip install -r requirements.txt -r requirements-sentiment.txt
+RUN pip install $(grep '^torch==' requirements-api.txt) --index-url https://download.pytorch.org/whl/cpu
+RUN pip install -r requirements.txt -r requirements-api.txt
 
 RUN python -c "from transformers import AutoModelForSequenceClassification as M, AutoTokenizer as T; T.from_pretrained('ProsusAI/finbert'); M.from_pretrained('ProsusAI/finbert')"
 
