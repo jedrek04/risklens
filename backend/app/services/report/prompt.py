@@ -21,6 +21,8 @@ Rules:
 9. Write like a person, in plain English. The fact sheet keys are internal names: never write them, and never write any word containing an underscore. Say "a 10-day horizon" and not "horizon_days", "the latest trading day was not unusual" and not "latest_day_is_unusual".
 10. Do not list every asset or every number. In each paragraph pick the two or three most important findings and explain what they mean for the reader.
 11. Do not judge or label the level of risk, volatility, correlation or sentiment with words such as low, moderate, high, elevated, significant, strong or weak, and do not call the portfolio safe or risky. State the numbers and what they measure, and let the reader judge. Plain comparisons between assets in the sheet (for example "more volatile than") are fine.
+12. The horizon in days applies only to Value at Risk, expected shortfall, the simulated range and portfolio volatility. Annualized volatility, daily volatility, correlations and anomaly counts are not horizon figures, so never attach a number of days to them.
+13. Write each recommendation as something for the reader to review or consider, tied to one specific number from the sheet (for example "Review whether a 30% position in Apple matches your comfort with its 43.8% ..."). Do not just repeat a number, and do not repeat points already made in the summary.
 
 Length: 300 to 400 words in total, never more than 450. Keep risk_outlook under 100 words, unusual_activity under 75, news_sentiment under 85, summary under 50, and each recommendation under 30 words.
 
