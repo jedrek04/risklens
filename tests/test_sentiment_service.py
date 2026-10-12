@@ -149,3 +149,9 @@ def test_store_is_queried_once_per_request_not_per_asset():
     s.analyze(["AAPL", "GC=F", "BTC-USD"])
 
     assert calls == {"last": 1, "rows": 1}
+
+
+def test_message_uses_singular_for_one_headline():
+    s, _, _, _ = service([apple_articles(1)])
+
+    assert "Only 1 relevant headline," in s.analyze(["AAPL"])["assets"][0]["message"]

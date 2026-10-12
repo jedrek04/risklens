@@ -54,7 +54,11 @@ def summarize(ticker: str, name: str, rows: list[dict], note: str | None = None)
         counts[max(("positive", "negative", "neutral"), key=lambda k: r[k])] += 1
 
     low = len(rows) < MIN_HEADLINES
-    message = f"Only {len(rows)} relevant headlines, below the {MIN_HEADLINES} needed for a reliable score" if low else None
+    message = (
+        f"Only {len(rows)} relevant {'headline' if len(rows) == 1 else 'headlines'}, "
+        f"below the {MIN_HEADLINES} needed for a reliable score"
+        if low else None
+    )
 
     return {
         "ticker": ticker,
