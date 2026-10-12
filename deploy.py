@@ -14,7 +14,8 @@ TARGETS = {
         "dockerfile": "backend/Dockerfile",
         "deploy": (
             "gcloud run deploy risklens-api --project {project} --region {region} "
-            "--image {image} --no-allow-unauthenticated --port 8080 --memory 1Gi --cpu 1"
+            "--image {image} --no-allow-unauthenticated --port 8080 --memory 2Gi --cpu 2 --timeout 300 "
+            "--set-secrets GNEWS_API_KEY=gnews-api-key:latest"
         ),
     },
     "pipeline": {
