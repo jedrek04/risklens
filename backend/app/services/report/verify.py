@@ -2,7 +2,8 @@ import json
 import re
 
 NUMBER = re.compile(r"\d+(?:\.\d+)?")
-MAX_WORDS = 550
+MAX_WORDS = 450
+CODE_WORD = re.compile(r"\b[A-Za-z]+(?:_[A-Za-z0-9]+)+\b")
 
 
 def _numbers(text: str) -> list[float]:
@@ -22,6 +23,10 @@ def check(draft, facts: dict) -> list[str]:
     unknown = sorted({n for n in NUMBER.findall(text) if float(n) not in allowed}, key=float)
     if unknown:
         problems.append("it contains numbers that are not in the fact sheet: " + ", ".join(unknown))
+
+    code_words = sorted(set(CODE_WORD.findall(text)))
+    if code_words:
+        problems.append("it uses internal field names instead of plain English: " + ", ".join(code_words))
 
     if len(text.split()) > MAX_WORDS:
         problems.append(f"it is longer than {MAX_WORDS} words")
