@@ -93,6 +93,9 @@ def render(data: dict) -> str:
 def main():
     parser = argparse.ArgumentParser(description="Run the full RiskLens flow in the cloud and show the report.")
     parser.add_argument("--portfolio", help='JSON list of {"ticker", "weight"}; default is a 5 asset demo portfolio')
+    parser.add_argument("--horizon", type=int, help="days ahead for the risk simulation, 1 to 90 (default 10)")
+    parser.add_argument("--n-sim", type=int, help="number of Monte Carlo simulations, 1000 to 100000 (default 10000)")
+    parser.add_argument("--days", type=int, help="days of price history for the risk model, 150 to 4000 (default 730)")
     parser.add_argument("--runs", type=int, default=1, help="generate the report this many times from the same results")
     parser.add_argument("--no-open", action="store_true", help="do not open the preview in the browser")
     args = parser.parse_args()
@@ -105,12 +108,16 @@ def main():
         base_url=URL, headers={"Authorization": f"Bearer {get_token()}"}, timeout=300
     )
 
+    risk_settings = {k: v for k, v in (("horizon", args.horizon), ("n_sim", args.n_sim), ("days", args.days)) if v is not None}
+
     print("Portfolio:", ", ".join(f"{a['ticker']} {a['weight']:.0%}" for a in portfolio))
+    print("Risk settings:", risk_settings or "API defaults (horizon 10, n_sim 10000, days 730)")
     print("\nStep 1: risk, anomalies and sentiment (in parallel)")
 
     def analyse(name: str) -> dict:
         start = time.time()
-        r = client.post(f"/risk/{name}", json={"portfolio": portfolio})
+        extra = risk_settings if name == "portfolio" else {}
+        r = client.post(f"/risk/{name}", json={"portfolio": portfolio, **extra})
         print(f"  {name:10s} HTTP {r.status_code}  {time.time() - start:5.1f}s")
         r.raise_for_status()
         return r.json()
