@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import useAnalysis from './hooks/useAnalysis'
 import TopBar from './components/TopBar'
 import { DEFAULT_SETTINGS } from './config'
 import { toRequestPortfolio } from './lib/portfolio'
@@ -10,20 +11,23 @@ export default function App() {
   const [step, setStep] = useState('build')
   const [items, setItems] = useState([])
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
-  const [request, setRequest] = useState(null)
+  const analysis = useAnalysis()
 
   const calculate = () => {
-    setRequest({ portfolio: toRequestPortfolio(items), days: settings.days, horizon: settings.horizon, n_sim: settings.simulations })
+    analysis.start(
+      { portfolio: toRequestPortfolio(items), days: settings.days, horizon: settings.horizon, n_sim: settings.simulations },
+      items,
+    )
     setStep('analyse')
   }
 
   return (
     <>
-      <TopBar step={step} enabled={{ build: true, analyse: request !== null, report: false }} onStep={setStep} />
+      <TopBar step={step} enabled={{ build: true, analyse: analysis.request !== null, report: false }} onStep={setStep} />
       {step === 'build' && (
         <BuildPage items={items} settings={settings} onItems={setItems} onSettings={setSettings} onCalculate={calculate} />
       )}
-      {step === 'analyse' && <AnalysisPage request={request} />}
+      {step === 'analyse' && <AnalysisPage analysis={analysis} />}
       {step === 'report' && <ReportPage />}
     </>
   )

@@ -1,16 +1,14 @@
-import { useMemo } from 'react'
 import AssetSearch from '../components/build/AssetSearch'
 import Donut from '../components/build/Donut'
 import ModelSettings from '../components/build/ModelSettings'
 import PortfolioTable from '../components/build/PortfolioTable'
 import TotalBar from '../components/build/TotalBar'
 import '../components/build/build.css'
-import tickers from '../data/tickers.json'
+import { ASSETS as tickers, ASSETS_BY_SYMBOL } from '../lib/assets'
 import { addAsset, isComplete } from '../lib/portfolio'
 import { validateSettings } from '../lib/settings'
 
 export default function BuildPage({ items, settings, onItems, onSettings, onCalculate }) {
-  const assetsBySymbol = useMemo(() => Object.fromEntries(tickers.map((t) => [t.symbol, t])), [])
   const ready = isComplete(items) && Object.keys(validateSettings(settings)).length === 0
 
   return (
@@ -34,7 +32,7 @@ export default function BuildPage({ items, settings, onItems, onSettings, onCalc
           <div className="donut-wrap">
             <Donut items={items} />
           </div>
-          <PortfolioTable items={items} assetsBySymbol={assetsBySymbol} onChange={onItems} />
+          <PortfolioTable items={items} assetsBySymbol={ASSETS_BY_SYMBOL} onChange={onItems} />
           <TotalBar items={items} />
           <ModelSettings settings={settings} onChange={onSettings} />
           <div className="cta">
