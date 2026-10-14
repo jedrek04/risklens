@@ -9,3 +9,5 @@ __pycache__/
 .idea/
 paper_notes.txt
 proposal.docx
+node_modules/
+frontend/dist/

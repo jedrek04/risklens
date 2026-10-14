@@ -15,7 +15,7 @@ Project `risklens-498721`, region `europe-west1`. Run everything from the repo r
 - `backend/app/pipeline/` – Cloud Run Job `market-data-load`: fetch -> BigQuery staging -> MERGE into
   `market_data.market_prices_raw`. Runs nightly at 01:00 (Cloud Scheduler, `--days 730`)
 - `tests/` – pytest, no GCP needed
-- `frontend/` – not started
+- `frontend/` – React app (Build screen done, see `frontend/README.md`)
 
 ## Commands
 
