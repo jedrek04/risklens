@@ -29,8 +29,9 @@ The asset list comes from `src/data/tickers.json`. Regenerate it after changing 
         TopBar.jsx        the step buttons
         build/            everything on the Build screen, one component per file
         analysis/         the cards of the Analyse screen, one component per file (charts, calendar, sentiment cards)
+        report/           the report page, the verification panel and the raw numbers view
       api.js              all calls to the backend, and the error messages
-      hooks/useAnalysis.js  runs the three analyses side by side and keeps their state
+      hooks/useAnalysis.js  runs the three analyses and the report, and keeps their state
       lib/                plain functions without React, all with tests
         portfolio.js      add, remove, fill, totals, the request for the API
         search.js         asset search and group counts
@@ -40,6 +41,7 @@ The asset list comes from `src/data/tickers.json`. Regenerate it after changing 
         color.js          colour scales for the heatmap and the calendar
         sentiment.js      gauge angle, status texts, safe headline links
         riskShare.js      share of the portfolio risk per asset
+        report.js         links the numbers in the report text to the data they come from
         colors.js         the colour of each portfolio slot
       styles/global.css   colours, fonts, shared look
       data/tickers.json   generated, do not edit by hand

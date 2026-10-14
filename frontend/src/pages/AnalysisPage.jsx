@@ -21,11 +21,13 @@ function HorizonSwitch({ value, onChange }) {
   )
 }
 
-export default function AnalysisPage({ analysis }) {
+export default function AnalysisPage({ analysis, onGenerate }) {
   const { request, items, risk } = analysis
   const slots = Object.fromEntries(items.map((i) => [i.symbol, i.slot]))
   const weights = Object.fromEntries(request.portfolio.map((p) => [p.ticker, `${Math.round(p.weight * 100)}%`]))
   const retryRisk = () => analysis.retry('risk')
+  const finished = (state) => state.status === 'ok' || state.status === 'error'
+  const canGenerate = risk.status === 'ok' && finished(analysis.anomalies) && finished(analysis.sentiment)
 
   return (
     <main>
@@ -80,6 +82,15 @@ export default function AnalysisPage({ analysis }) {
 
       <div className="eyebrow section-label">News tone · last 7 days · FinBERT</div>
       <SentimentSection state={analysis.sentiment} items={items} onRetry={() => analysis.retry('sentiment')} />
+
+      <div className="card cta-bar">
+        <div className="cta-text">
+          <b>Ready for your written report?</b>
+          <div className="muted">It uses the numbers above, so the report and the cards always match. About 7 seconds.</div>
+        </div>
+        <button className="btn primary" disabled={!canGenerate} onClick={onGenerate}>Generate report</button>
+        {!canGenerate && <span className="muted small">Waiting for the analyses to finish</span>}
+      </div>
 
       <p className="disclaimer">
         RiskLens gives statistical estimates for information only. It is not financial advice. Estimates can be wrong and past data does not predict future results.

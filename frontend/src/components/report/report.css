@@ -1,0 +1,61 @@
+.report-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+@media (max-width: 1100px) { .report-grid { grid-template-columns: 1fr; } }
+.report-grid .seg { margin-bottom: 12px; }
+.paper-wrap { display: flex; justify-content: center; background: #06080c; border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 28px 12px; overflow-x: auto; }
+
+.paper { width: 794px; flex: none; min-height: 1000px; background: #fff; color: #1d2433; padding: 48px 56px 40px; box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6); font: 14px/1.55 var(--sans); }
+.paper-brand { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid #1f5eff; padding-bottom: 10px; margin-bottom: 22px; }
+.paper-brand b { font-size: 15px; letter-spacing: 0.04em; color: #1f5eff; }
+.paper-brand span { font-size: 12px; color: #667085; }
+.paper h1 { font-size: 24px; margin: 0 0 14px; color: #1d2433; font-weight: 800; }
+.paper h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.07em; color: #1f5eff; margin: 20px 0 4px; font-weight: 700; }
+.paper p { margin: 0 0 6px; }
+.paper ul { margin: 6px 0 0 18px; padding: 0; }
+.paper li { margin-bottom: 4px; }
+.paper-stats { display: flex; gap: 12px; margin: 6px 0 18px; }
+.paper-stat { flex: 1; border: 1px solid #e4e7ec; border-radius: 8px; padding: 10px 12px; }
+.paper-stat .v { font-size: 22px; font-weight: 700; }
+.paper-stat .l { font-size: 11px; color: #667085; }
+.paper table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 2px 0 6px; }
+.paper th { text-align: left; font-weight: 600; color: #667085; border-bottom: 1px solid #e4e7ec; padding: 4px 0; }
+.paper td { padding: 4px 0; border-bottom: 1px solid #e4e7ec; }
+.paper .n { text-align: right; font-variant-numeric: tabular-nums; }
+.paper-ticker { color: #667085; font-size: 11px; }
+.paper-foot { margin-top: 26px; padding-top: 10px; border-top: 1px solid #e4e7ec; font-size: 11px; color: #667085; font-style: italic; }
+.paper-meta { font-size: 11px; color: #667085; margin-top: 8px; }
+.num { border-bottom: 1.5px dotted #1f9e5c; cursor: help; }
+.num:hover { background: #d9f5e6; border-radius: 3px; }
+
+.side { display: grid; gap: 14px; position: sticky; top: 76px; }
+.card-head.tight { margin-bottom: 6px; }
+.vrow { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; margin: 8px 0; color: var(--text-2); }
+.vrow .ok { color: var(--good); font-weight: 800; }
+.vrow b { color: var(--text); }
+.fact-list { max-height: 240px; overflow: auto; font-size: 12.5px; border: 1px solid var(--line-soft); border-radius: 8px; margin-top: 8px; }
+.fact-list div { display: flex; justify-content: space-between; gap: 12px; padding: 5px 10px; border-bottom: 1px solid var(--line-soft); }
+.fact-list div:last-child { border-bottom: 0; }
+.fact-list div.hit { background: #12301f; }
+.fact-list span:first-child { color: var(--text-2); }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.wide-btn { grid-column: 1 / -1; }
+.btn.ghost { background: transparent; }
+
+.raw h2 { margin-bottom: 4px; }
+.raw h3 { margin: 16px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-3); }
+.raw table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.raw td { padding: 6px 0; border-bottom: 1px solid var(--line-soft); }
+.raw td:last-child { text-align: right; }
+.small { font-size: 12.5px; margin: 4px 0 0; }
+
+.progress { display: flex; align-items: center; gap: 18px; justify-content: space-between; flex-wrap: wrap; }
+.progress p { margin: 4px 0 0; }
+.spinner { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--s3); border-top-color: var(--ice); animation: spin 0.9s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+@page { size: A4; margin: 0; }
+@media print {
+  body * { visibility: hidden; }
+  .paper, .paper * { visibility: visible; }
+  .paper { position: absolute; left: 0; top: 0; box-shadow: none; width: 100%; }
+}

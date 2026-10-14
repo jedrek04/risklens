@@ -35,3 +35,6 @@ async function post(path, body) {
 export const fetchRisk = (request) => post('/risk/portfolio', request)
 export const fetchAnomalies = (request) => post('/risk/anomalies', { portfolio: request.portfolio })
 export const fetchSentiment = (request) => post('/risk/sentiment', { portfolio: request.portfolio })
+
+export const fetchReport = ({ portfolio, risk, anomalies, sentiment }) =>
+  post('/risk/report', { portfolio, risk, anomalies, sentiment })

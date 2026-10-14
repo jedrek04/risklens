@@ -21,14 +21,19 @@ export default function App() {
     setStep('analyse')
   }
 
+  const generate = () => {
+    if (analysis.report.status === 'idle') analysis.generateReport()
+    setStep('report')
+  }
+
   return (
     <>
-      <TopBar step={step} enabled={{ build: true, analyse: analysis.request !== null, report: false }} onStep={setStep} />
+      <TopBar step={step} enabled={{ build: true, analyse: analysis.request !== null, report: analysis.risk.status === 'ok' }} onStep={setStep} />
       {step === 'build' && (
         <BuildPage items={items} settings={settings} onItems={setItems} onSettings={setSettings} onCalculate={calculate} />
       )}
-      {step === 'analyse' && <AnalysisPage analysis={analysis} />}
-      {step === 'report' && <ReportPage />}
+      {step === 'analyse' && <AnalysisPage analysis={analysis} onGenerate={generate} />}
+      {step === 'report' && <ReportPage analysis={analysis} />}
     </>
   )
 }
